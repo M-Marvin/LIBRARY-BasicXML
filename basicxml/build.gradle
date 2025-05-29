@@ -1,0 +1,58 @@
+
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+version = '1.0'
+
+repositories {
+	mavenCentral()
+	maven {
+		url 'https://maven.pkg.github.com/m-marvin/library-simplelogging'
+		credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+	}
+	mavenLocal()
+}
+
+java {
+	sourceCompatibility = "1.17"
+	targetCompatibility = "1.17"
+    withSourcesJar()
+}
+
+dependencies {
+	
+	// SimpleLogging
+	implementation 'de.m_marvin.simplelogging:simplelogging:2.3'
+	
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Version': version
+        attributes 'Implementation-Title': project.name
+        attributes 'Implementation-Vendor-Id': 'de.m_marvin'
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/m-marvin/library-basicxml")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    publications {
+        maven(MavenPublication) {
+            groupId = 'de.m_marvin.metabuild'
+        	artifactId = project.name
+        	from components.java
+        }
+    }
+}
