@@ -270,7 +270,8 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 				attributeMap.put(attributeName, valueStr);
 			}
 			
-			if (last != attributeStr.length())
+			String excess = attributeStr.substring(last);
+			if (!excess.isBlank())
 				throw new XMLException(this, "excess characters after attributes: " + s);
 		} else {
 			if (elementName.end() != elementStr.length())
@@ -318,10 +319,15 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 		if (readN(9).equals("<![CDATA[")) return null;
 		
 		// check for comment block and skip
-		if (readN(4).equals("<!--")) {
+		while (readN(4).equals("<!--")) {
 			int s = 6;
 			while (!readN(s).endsWith("-->")) s++;
 			deleteN(s);
+
+			// skip all white spaces
+			int w = 0; while (Character.isWhitespace(readAt(w))) w++;
+			deleteN(w);
+			
 		}
 		
 		this.textParsing = false;

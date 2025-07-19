@@ -148,9 +148,9 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 				namespaceId = this.namespaceIdProvider.provide(element.namespace(), namespaces);
 				if (element.type() == DescType.OPEN) namespaces.put(element.namespace(), namespaceId);
 				if (namespaceId.isEmpty())
-					attributes.put("xlmns", element.namespace().toString());
+					attributes.put("xmlns", element.namespace().toString());
 				else
-					attributes.put(String.format("xlmns:%s", namespaceId), element.namespace().toString());
+					attributes.put(String.format("xmlns:%s", namespaceId), element.namespace().toString());
 			}
 			// write namespace
 			if (!namespaceId.isEmpty())
