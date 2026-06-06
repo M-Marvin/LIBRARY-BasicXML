@@ -44,8 +44,10 @@ public record XMLClassField<V, P>(
 	public static <V, P> XMLClassField<V, P> makeFromField(Class<V> type, Field field) {
 		Objects.requireNonNull(field, "field can not be null");
 		
+		field.trySetAccessible();
+		
 		if (!field.isAnnotationPresent(XMLField.class))
-			throw new IllegalArgumentException("the supplied field is not annotated as an XML type object");
+			throw new IllegalArgumentException("the supplied field is not annotated as an XML type object: " + field);
 		
 		XMLField xmlFieldAnnotation = field.getAnnotation(XMLField.class);
 		XMLTypeAdapter xmlTypeAdapterAnnotation = field.getAnnotation(XMLTypeAdapter.class);
@@ -84,26 +86,30 @@ public record XMLClassField<V, P>(
 		if (xmlTypeAdapterAnnotation != null) {
 			Class<? extends XMLClassFieldAdapter<?, ?>> adapterClass = xmlTypeAdapterAnnotation.value();
 			try {
-				if (adapterClass.getEnclosingClass() != null && Modifier.isStatic(adapterClass.getModifiers()))
-					throw new IllegalArgumentException("the supplied type adapter class must not be non-static");
+				if (adapterClass.getEnclosingClass() != null && !Modifier.isStatic(adapterClass.getModifiers()))
+					throw new IllegalArgumentException("the supplied type adapter class must be static: " + adapterClass);
 				Constructor<? extends XMLClassFieldAdapter<?, ?>> constructor = adapterClass.getConstructor();
 				adapter = (XMLClassFieldAdapter<V, P>) constructor.newInstance();
 			} catch (NoSuchMethodException e) {
-				throw new IllegalArgumentException("the supplied field's type adapter has no default constructor");
+				throw new IllegalArgumentException("the supplied field's type adapter has no default constructor: " + field);
 			} catch (InstantiationException | InvocationTargetException | IllegalArgumentException | IllegalAccessException e) {
-				throw new LayerInstantiationException("failed to construct the type adapter instance for the supplied field", e);
+				throw new LayerInstantiationException("failed to construct the type adapter instance for the supplied field: " + field, e);
 			}
 		}
 		
 		if (adapter == null) {
 			XMLTypeAdapter fallbackAdapterAnnotation = dataType.getAnnotation(XMLTypeAdapter.class);
 			if (fallbackAdapterAnnotation != null) {
+				Class<? extends XMLClassFieldAdapter<?, ?>> adapterClass = fallbackAdapterAnnotation.value();
 				try {
-					adapter = (XMLClassFieldAdapter<V, P>) fallbackAdapterAnnotation.value().getConstructor().newInstance();
+					if (adapterClass.getEnclosingClass() != null && !Modifier.isStatic(adapterClass.getModifiers()))
+						throw new IllegalArgumentException("the supplied type adapter class must be static: " + adapterClass);
+					Constructor<? extends XMLClassFieldAdapter<?, ?>> constructor = adapterClass.getConstructor();
+					adapter = (XMLClassFieldAdapter<V, P>) constructor.newInstance();
 				} catch (NoSuchMethodException e) {
-					throw new IllegalArgumentException("the supplied field's fallback type adapter has no default constructor");
+					throw new IllegalArgumentException("the supplied field's fallback type adapter has no default constructor: " + field);
 				}  catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | SecurityException e) {
-					throw new LayerInstantiationException("failed to construct the type fallback adapter instance for the supplied field type", e);
+					throw new LayerInstantiationException("failed to construct the type fallback adapter instance for the supplied field type: " + dataType, e);
 				}
 			}
 		}
@@ -130,7 +136,7 @@ public record XMLClassField<V, P>(
 						Constructor<Collection<V>> collectionConstructor = (Constructor<Collection<V>>) this.field.getType().getConstructor();
 						collection = collectionConstructor.newInstance();
 					} catch (NoSuchMethodException e) {
-						throw new XMLMarshalingException("the collection class does not have an default constructor, and no instance if provided: " + this.field, e);
+						throw new XMLMarshalingException("the collection class does not have an default constructor, and no instance is provided: " + this.field, e);
 					} catch (InstantiationException | SecurityException | InvocationTargetException e) {
 						throw new XMLMarshalingException("the collection class could not be constructed: " + this.field, e);
 					}
@@ -223,9 +229,9 @@ public record XMLClassField<V, P>(
 				try {
 					Field enumField = e.getClass().getDeclaredField(((Enum) e).name());
 					XMLEnum enumAnnotation = enumField.getAnnotation(XMLEnum.class);
-					if (enumAnnotation == null) 
+					if (enumAnnotation == null) {
 						if (((Enum) e).name().equalsIgnoreCase(valueStr)) return e;
-					if (enumAnnotation.value().equals(valueStr)) return e;
+					} else if (enumAnnotation.value().equals(valueStr)) return e;
 				} catch (NoSuchFieldError | NoSuchFieldException | SecurityException e1) {
 					throw new RuntimeException("enum field access error", e1);
 				}
