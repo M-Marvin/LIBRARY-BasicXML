@@ -30,6 +30,8 @@ public record XMLClassField<V, P>(
 		Field field,
 		/** data type of the field **/
 		Class<V> type,
+		/** parent type for non static classes **/
+		Class<P> parentType,
 		/** optional type adapter used for converting to the fields data type **/
 		XMLClassFieldAdapter<V, P> adapter
 		) {
@@ -83,8 +85,13 @@ public record XMLClassField<V, P>(
 		boolean isPrimitive = dataType.isPrimitive() || dataType == String.class || dataType.isEnum();
 		
 		XMLClassFieldAdapter<V, P> adapter = null;
+		Class<P> parentType = (Class<P>) type.getEnclosingClass();
 		if (xmlTypeAdapterAnnotation != null) {
 			Class<? extends XMLClassFieldAdapter<?, ?>> adapterClass = xmlTypeAdapterAnnotation.value();
+			if (parentType == null || Modifier.isStatic(parentType.getModifiers()))
+				parentType = (Class<P>) xmlTypeAdapterAnnotation.parent();
+			if (parentType == Void.class)
+				parentType = null;
 			try {
 				if (adapterClass.getEnclosingClass() != null && !Modifier.isStatic(adapterClass.getModifiers()))
 					throw new IllegalArgumentException("the supplied type adapter class must be static: " + adapterClass);
@@ -117,7 +124,7 @@ public record XMLClassField<V, P>(
 		if (!dataType.isAnnotationPresent(XMLType.class) && adapter == null && !isPrimitive)
 			throw new IllegalArgumentException("field type requires type adapter: " + field);
 		
-		return new XMLClassField<V, P>(isPrimitive, fieldType, field, dataType, adapter);
+		return new XMLClassField<V, P>(isPrimitive, fieldType, field, dataType, parentType, adapter);
 		
 	}
 	

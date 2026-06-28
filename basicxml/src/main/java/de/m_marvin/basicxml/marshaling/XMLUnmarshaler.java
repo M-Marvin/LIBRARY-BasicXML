@@ -53,8 +53,8 @@ public class XMLUnmarshaler {
 		T value = null;
 		if (attributeField.adapter() != null) {
 			@SuppressWarnings("unchecked")
-			P parentObject = attributeField.type().getEnclosingClass() == null ? null : 
-				(P) objectStack.findTopMost(attributeField.type().getEnclosingClass()::isInstance);
+			P parentObject = attributeField.parentType() == null ? null : 
+				(P) objectStack.findTopMost(attributeField.parentType()::isInstance);
 			try {
 				value = attributeField.adapter().adaptType(valueStr, parentObject);
 			} catch (ClassCastException e) {

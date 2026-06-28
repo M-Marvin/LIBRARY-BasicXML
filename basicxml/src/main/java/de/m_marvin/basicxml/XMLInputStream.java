@@ -478,7 +478,7 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 		int r = 0;
 		while ((r = readText(buf, 0, 4)) > 0)
 			buffer.append(buf, 0, r);
-		return r == -1 ? null : buffer.toString();
+		return r == -1 ? null : fillSpecialCharacters(buffer.toString());
 	}
 	
 	@Override
