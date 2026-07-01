@@ -57,9 +57,15 @@ public class XMLUnmarshaler {
 				(P) objectStack.findTopMost(attributeField.parentType()::isInstance);
 			try {
 				value = attributeField.adapter().adaptType(valueStr, parentObject);
+			} catch (XMLException e) {
+				throw new XMLMarshalingException(xmlStream, "error while invoking type adapter: " + attributeField.field(), e);
 			} catch (ClassCastException e) {
 				// if this happens, it indicates that the adapters parent object-type type-argument was probably set to some arbitrary value because the parent argument is not required.
-				value = attributeField.adapter().adaptType(valueStr, null);
+				try {
+					value = attributeField.adapter().adaptType(valueStr, null);
+				} catch (XMLException e1) {
+					throw new XMLMarshalingException(xmlStream, "error while invoking type adapter: " + attributeField.field(), e1);
+				}
 			}
 		} else if (attributeField.isPrimitive()) {
 			value = XMLClassField.adaptPrimitive(attributeField.type(), valueStr);
