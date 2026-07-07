@@ -108,7 +108,7 @@ public class XMLUnmarshaler {
 				attributeField = xmlClassType.attributes().get(XMLClassType.REMAINING_MAP_FIELD);
 				if (attributeField == null) continue;
 			}
-			fillAttributeFromXML(xmlClassObject, attributeField, openingElement.name(), xmlStream, openingElement.attributes().get(attributeName), objectStack);
+			fillAttributeFromXML(xmlClassObject, attributeField, attributeName, xmlStream, openingElement.attributes().get(attributeName), objectStack);
 		}
 		
 		if (openingElement.type() != DescType.SELF_CLOSING) {
