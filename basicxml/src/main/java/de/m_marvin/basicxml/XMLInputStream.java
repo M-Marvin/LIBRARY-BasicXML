@@ -74,8 +74,9 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	/**
 	 * Attempts to fill the character buffer for parsing XML with the requested number of characters from the source stream or reader.<br>
 	 * If the source reader is not yet set, it will assume ASCII 1 byte per character.
+	 * Returns the amount of characters actually read and/or available in the buffer.
 	 */
-	private void bufferData(int blen) throws IOException {
+	private int bufferData(int blen) throws IOException {
 		if (this.buffer.length() <= blen) {
 			int n = blen - this.buffer.length();
 			if (this.reader != null) {
@@ -83,21 +84,24 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 				int r = this.reader.read(c);
 				if (r == -1) r = 0;
 				this.buffer.append(c, 0, r);
-				if (r < n) throw new EOFException("unexpected EOF");
+				return this.buffer.length();
 			} else {
 				// for prolog reading, assume 1 byte per character
 				byte[] b = this.stream.readNBytes(n);
-				if (b.length != n) throw new EOFException("unexpected EOF");
 				this.buffer.append(new String(b, StandardCharsets.US_ASCII));
+				return this.buffer.length();
 			}
 		}
+		return blen;
 	}
 	
 	/**
 	 * Read the character at the index from the current character buffer
 	 */
 	private char readAt(int index) throws IOException {
-		bufferData(index + 1);
+		int n = bufferData(index + 1);
+		if (n < index + 1)
+			throw new IOException("unexpected EOF");
 		return this.buffer.charAt(index);
 	}
 	
@@ -114,8 +118,8 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	 * Read the requested number of characters from the character buffer
 	 */
 	private String readN(int len) throws IOException {
-		bufferData(len);
-		return this.buffer.substring(0, len);
+		int n = bufferData(len);
+		return this.buffer.substring(0, n);
 	}
 	
 	/**
