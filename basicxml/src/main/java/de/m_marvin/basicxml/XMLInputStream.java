@@ -349,7 +349,7 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 		return null;
 	}
 	
-	protected static String fillSpecialCharacters(String text) {
+	private static String fillSpecialCharacters(String text) {
 		text = text.replaceAll("&lt;", "<");
 		text = text.replaceAll("&gt;", ">");
 		text = text.replaceAll("&amp;", "&");

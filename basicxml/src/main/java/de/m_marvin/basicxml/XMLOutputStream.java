@@ -134,7 +134,7 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 	/** 
 	 * formats the string between the angled brackets for the provided element descriptor
 	 */
-	public String makeElementString(ElementDescriptor element, Map<URI, String> namespaces) {
+	private String makeElementString(ElementDescriptor element, Map<URI, String> namespaces) {
 
 		StringBuffer elementStr = new StringBuffer();
 		if (element.type() == DescType.CLOSE)
@@ -170,7 +170,7 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 		
 	}
 	
-	protected static String replaceSpecialCharacters(String text) {
+	private static String replaceSpecialCharacters(String text) {
 		text = text.replace("&", "&amp;");
 		text = text.replace("<", "&lt;");
 		text = text.replace(">", "&gt;");

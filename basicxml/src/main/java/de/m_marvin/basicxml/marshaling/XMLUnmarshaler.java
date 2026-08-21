@@ -47,7 +47,7 @@ public class XMLUnmarshaler {
 		return unmarshall(xmlStream, objectType, null);
 	}
 	
-	protected <T, P> void fillAttributeFromXML(Object xmlClassObject, XMLClassField<T, P> attributeField, String attributeName, XMLInputStream xmlStream, String valueStr, StackList<Object> objectStack) throws XMLMarshalingException {
+	private <T, P> void fillAttributeFromXML(Object xmlClassObject, XMLClassField<T, P> attributeField, String attributeName, XMLInputStream xmlStream, String valueStr, StackList<Object> objectStack) throws XMLMarshalingException {
 
 		objectStack.push(xmlClassObject);
 		T value = null;
@@ -78,7 +78,7 @@ public class XMLUnmarshaler {
 		
 	}
 	
-	protected <T, P> void fillElementFromXML(Object xmlClassObject, XMLClassField<T, P> elementField, String elementName, XMLInputStream xmlStream, ElementDescriptor openingElement, StackList<Object> objectStack) throws IOException, XMLException, XMLMarshalingException {
+	private <T, P> void fillElementFromXML(Object xmlClassObject, XMLClassField<T, P> elementField, String elementName, XMLInputStream xmlStream, ElementDescriptor openingElement, StackList<Object> objectStack) throws IOException, XMLException, XMLMarshalingException {
 		
 		objectStack.push(xmlClassObject);
 		T value = makeObjectFromXML(xmlStream, openingElement, elementField.type(), objectStack);
@@ -88,7 +88,7 @@ public class XMLUnmarshaler {
 		
 	}
 	
-	protected <T, P> T makeObjectFromXML(XMLInputStream xmlStream, ElementDescriptor openingElement, Class<T> objectType, StackList<Object> objectStack) throws IOException, XMLException, XMLMarshalingException {
+	private <T, P> T makeObjectFromXML(XMLInputStream xmlStream, ElementDescriptor openingElement, Class<T> objectType, StackList<Object> objectStack) throws IOException, XMLException, XMLMarshalingException {
 		assert openingElement.type() != DescType.CLOSE : "element descriptor can not be a closing element";
 	
 		@SuppressWarnings("unchecked")
