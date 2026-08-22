@@ -38,8 +38,12 @@ public class XMLMarshaler {
 			resolveTypeObjects(subTypes, type, ignoreNamespace);
 		}
 	}
-	
+
 	public <T> void marshal(XMLOutputStream xmlStream, T object) throws XMLMarshalingException, IOException, XMLException {
+		marshal(xmlStream, object, true);
+	}
+	
+	public <T> void marshal(XMLOutputStream xmlStream, T object, boolean closeStrean) throws XMLMarshalingException, IOException, XMLException {
 		
 		if (!object.getClass().isAnnotationPresent(XMLType.class))
 			throw new XMLMarshalingException("class is not annotated as XML type");
@@ -58,7 +62,8 @@ public class XMLMarshaler {
 		
 		writeElementObject(xmlStream, namespace, xmlRootAnnotation.value(), object);
 		
-		xmlStream.close();
+		if (closeStrean)
+			xmlStream.close();
 		
 	}
 	

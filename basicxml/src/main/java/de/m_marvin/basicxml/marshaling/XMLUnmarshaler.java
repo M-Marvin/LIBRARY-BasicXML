@@ -32,19 +32,30 @@ public class XMLUnmarshaler {
 	}
 	
 	public <T> T unmarshall(XMLInputStream xmlStream, Class<T> objectType, URI fallbackNamespace) throws IOException, XMLException, XMLMarshalingException {
+		return unmarshall(xmlStream, objectType, fallbackNamespace, true);
+	}
+		
+	public <T> T unmarshall(XMLInputStream xmlStream, Class<T> objectType, URI fallbackNamespace, boolean closeStream) throws IOException, XMLException, XMLMarshalingException {
 		
 		if (fallbackNamespace != null)
 			xmlStream.getNamespaces().put("", fallbackNamespace);
 		ElementDescriptor element = xmlStream.readNext();
 		if (element == null) return null;
 		T xmlObject = makeObjectFromXML(xmlStream, element, objectType, new StackList<Object>());
-		xmlStream.close();
+		
+		if (closeStream)
+			xmlStream.close();
+		
 		return xmlObject;
 		
 	}
-	
+
 	public <T> T unmarshall(XMLInputStream xmlStream, Class<T> objectType) throws IOException, XMLException, XMLMarshalingException {
-		return unmarshall(xmlStream, objectType, null);
+		return unmarshall(xmlStream, objectType, true);
+	}
+	
+	public <T> T unmarshall(XMLInputStream xmlStream, Class<T> objectType, boolean closeStream) throws IOException, XMLException, XMLMarshalingException {
+		return unmarshall(xmlStream, objectType, null, closeStream);
 	}
 	
 	private <T, P> void fillAttributeFromXML(Object xmlClassObject, XMLClassField<T, P> attributeField, String attributeName, XMLInputStream xmlStream, String valueStr, StackList<Object> objectStack) throws XMLMarshalingException {
