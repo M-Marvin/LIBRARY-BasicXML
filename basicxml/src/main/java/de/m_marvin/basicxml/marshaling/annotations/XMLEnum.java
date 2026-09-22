@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 /**
  * Defines an name for an enum constant.
  */
-public @interface XMLEnum {
+public @interface XmlEnum {
 	
 	public String value();
 	

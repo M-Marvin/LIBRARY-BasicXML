@@ -10,10 +10,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Stack;
 
-import de.m_marvin.basicxml.internal.StackList;
-
-public class XMLOutputStream implements XMLStream, AutoCloseable {
+/**
+ * An XML writer, capable of writing individual elements to an stream.
+ */
+public class XmlWriter implements XmlStream, AutoCloseable {
 
 	/** output stream for XML character data */
 	private final OutputStream stream;
@@ -28,7 +30,7 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 	
 	private final boolean prettyPrinting;
 	/** tag element stack, contains the "path" to the current element the parser is writing to */
-	private final StackList<TagEntry> stack = new StackList<TagEntry>();
+	private final Stack<TagEntry> stack = new Stack<TagEntry>();
 	/** the namespaces defined inside the element the parser is currently reading from */
 	private Map<URI, String> namespaces = new HashMap<>();
 	
@@ -42,15 +44,15 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 	/** true if only single line text was written to the currently open element */
 	private boolean singleLineText = true;
 
-	public XMLOutputStream(OutputStream stream) {
+	public XmlWriter(OutputStream stream) {
 		this(stream, true);
 	}
 	
-	public XMLOutputStream(OutputStream stream, boolean prettyPrinting) {
+	public XmlWriter(OutputStream stream, boolean prettyPrinting) {
 		this(stream, prettyPrinting, null);
 	}
 	
-	public XMLOutputStream(OutputStream stream, boolean prettyPrinting, NamespaceIdProvider namespaceIdProvider) {
+	public XmlWriter(OutputStream stream, boolean prettyPrinting, NamespaceIdProvider namespaceIdProvider) {
 		Objects.requireNonNull(stream, "XML data stream can not be null");
 		this.stream = stream;
 		this.prettyPrinting = prettyPrinting;
@@ -190,12 +192,12 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 	/**
 	 * Close the current tag element on the stack and restore previous namespace map
 	 */
-	private void closeTag(String name) throws XMLException {
+	private void closeTag(String name) throws XmlException {
 		if (this.stack.size() == 0)
-			throw new XMLException(this, "excess close tag: </" + name + ">");
+			throw new XmlException(this, "excess close tag: </" + name + ">");
 		TagEntry last = this.stack.pop();
 		if (!last.name.equals(name))
-			throw new XMLException(this, "improper tag close order: </" + name + "> should be </" + last.name() + ">");
+			throw new XmlException(this, "improper tag close order: </" + name + "> should be </" + last.name() + ">");
 		this.namespaces = last.previousNamespaces;
 	}
 	
@@ -203,9 +205,9 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 	 * Writes the element tag for the element descriptor, ensuring that the order of element open and close tags is correct.
 	 * @param element The element descriptor to write to the XML file
 	 * @throws IOException
-	 * @throws XMLException
+	 * @throws XmlException
 	 */
-	public void writeNext(ElementDescriptor element) throws IOException, XMLException {
+	public void writeNext(ElementDescriptor element) throws IOException, XmlException {
 		Objects.requireNonNull(element, "element can not be null");
 		
 		if (this.writer == null)
@@ -222,7 +224,7 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 		if (element.type() == DescType.SELF_CLOSING) namespaces = new LinkedHashMap<URI, String>(this.namespaces);
 		
 		if (element.type() == DescType.CLOSE && element.attributes() != null && !element.attributes().isEmpty())
-			throw new XMLException(this, "attributes should be empty on closing element: " + element.name());
+			throw new XmlException(this, "attributes should be empty on closing element: " + element.name());
 		
 		if (this.prettyPrinting && !this.singleLineText || element.type() != DescType.CLOSE) {
 			this.writer.write('\n');
@@ -245,9 +247,9 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 	 * @param useCData If the characters should be written inside an CDATA block to the XML file
 	 * @return The number of bytes actually written (should always match the len parameter, reserved for future changes)
 	 * @throws IOException
-	 * @throws XMLException 
+	 * @throws XmlException 
 	 */
-	public int writeText(char[] cbuf, int off, int len, boolean useCData) throws IOException, XMLException {
+	public int writeText(char[] cbuf, int off, int len, boolean useCData) throws IOException, XmlException {
 		Objects.requireNonNull(cbuf, "character buffer can not be null");
 		if ((off < 0) || (off > cbuf.length) || (len < 0) ||
 			((off + len) > cbuf.length) || ((off + len) < 0)) {
@@ -258,7 +260,7 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 			writeProlog();
 		
 		if (this.stack.isEmpty())
-			throw new XMLException("can not write text data ouside root XML element");
+			throw new XmlException("can not write text data ouside root XML element");
 
 		// check if this text is single line or multi-line
 		String text = new String(cbuf, off, len);
@@ -299,9 +301,9 @@ public class XMLOutputStream implements XMLStream, AutoCloseable {
 	 * @param text The text to be written
 	 * @param useCData If the characters should be written inside an CDATA block to the XML file
 	 * @throws IOException
-	 * @throws XMLException 
+	 * @throws XmlException 
 	 */
-	public void writeAllText(String text, boolean useCData) throws IOException, XMLException {
+	public void writeAllText(String text, boolean useCData) throws IOException, XmlException {
 		char[] chars = text.toCharArray();
 		writeText(chars, 0, chars.length, useCData);
 	}

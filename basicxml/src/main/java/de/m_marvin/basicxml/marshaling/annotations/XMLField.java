@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 /**
  * Marks an field of an class as taking part in the XML (un)marshaling
  */
-public @interface XMLField {
+public @interface XmlField {
 	
 	/**
 	 * Decides how this field is treated by the XML (un)marshaler

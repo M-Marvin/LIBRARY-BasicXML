@@ -1,0 +1,53 @@
+import de.m_marvin.metabuild.java.script.JavaBuildScript;
+import de.m_marvin.metabuild.maven.Maven;
+import de.m_marvin.metabuild.maven.types.Repository;
+import de.m_marvin.metabuild.maven.types.Repository.Credentials;
+
+public class Buildfile extends JavaBuildScript {
+	
+	String version = "1.2";
+	
+	@Override
+	public void init() {
+		
+		projectName = "basicxml";
+		
+		super.init();
+		
+		withSourcesJar();
+
+		compileJava.targetCompatibility = "17";
+		compileJava.sourceCompatibility = "17";
+		
+	}
+	
+	@Override
+	public void repositories() {
+		
+	}
+	
+	@Override
+	public void dependencies() {
+		
+	}
+	
+	@Override
+	public void publishing() {
+		
+		super.publishing();
+		
+		publishMavenLocal.coordinates("de.m_marvin.basicxml:basicxml:" + version);
+		
+		publishMaven.coordinates("de.m_marvin.basicxml:basicxml:" + version);
+		publishMaven.repository(new Repository(
+				"GHP [UnifiedVectors]", 
+				"https://maven.pkg.github.com/m-marvin/library-basicxml",
+				new Credentials(
+						() -> System.getenv("GITHUB_ACTOR"), 
+						() -> System.getenv("GITHUB_TOKEN")
+				)
+		));
+		
+	}
+	
+}

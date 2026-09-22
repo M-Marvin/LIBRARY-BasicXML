@@ -14,16 +14,15 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.m_marvin.basicxml.internal.StackList;
-
 /**
- * An XML character data input stream, capable of reading individual elements in order in which they are supplied from the input stream.<br>
+ * An XML reader, capable of reading individual elements in order in which they are supplied from the input stream.<br>
  * Text data within and between individual tags is read separately from the tag descriptors.
  */
-public class XMLInputStream implements XMLStream, AutoCloseable {
+public class XmlReader implements XmlStream, AutoCloseable {
 	
 	/** source stream for XML character data */
 	private final InputStream stream;
@@ -41,17 +40,17 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	/** character data buffer for parsing from stream */
 	private final StringBuffer buffer = new StringBuffer();
 	/** tag element stack, contains the "path" to the current element the parser is reading from */
-	private final StackList<TagEntry> stack = new StackList<TagEntry>();
+	private final Stack<TagEntry> stack = new Stack<TagEntry>();
 	/** the namespaces defined inside the element the parser is currently reading from */
 	private Map<String, URI> namespaces = new HashMap<>();
 	
-	public XMLInputStream(InputStream stream) throws IOException {
+	public XmlReader(InputStream stream) throws IOException {
 		Objects.requireNonNull(stream, "XML data stream can not be null");
 		this.stream = stream;
 		this.isSplit = false;
 	}
 	
-	private XMLInputStream(XMLInputStream parentStream) {
+	private XmlReader(XmlReader parentStream) {
 		this.stream = parentStream.stream;
 		this.reader = parentStream.reader;
 		this.version = parentStream.version;
@@ -140,12 +139,12 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	/**
 	 * Close the current tag element on the stack and restore previous namespace map
 	 */
-	private void closeTag(String name) throws XMLException {
+	private void closeTag(String name) throws XmlException {
 		if (this.stack.size() == 0)
-			throw new XMLException(this, "excess close tag: </" + name + ">");
+			throw new XmlException(this, "excess close tag: </" + name + ">");
 		TagEntry last = this.stack.pop();
 		if (!last.name.equals(name))
-			throw new XMLException(this, "improper tag close order: </" + name + "> should be </" + last.name() + ">");
+			throw new XmlException(this, "improper tag close order: </" + name + "> should be </" + last.name() + ">");
 		this.namespaces = last.previousNamespaces;
 	}
 	
@@ -153,7 +152,7 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	 * Attempt to read the prolog entry, put the read characters onto the read buffer if this fails.<br>
 	 * Default to XML 1.0 and UTF-8 if no prolog could be read.
 	 */
-	private void readProlog() throws IOException, XMLException {
+	private void readProlog() throws IOException, XmlException {
 		if (this.reader != null) return;
 		
 		// attempt to read prolog
@@ -164,7 +163,7 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 			
 			ElementDescriptor element = parseElementString(prolog);
 			if (element.type() != DescType.OPEN)
-				throw new XMLException("prolog entry can not be closing or self closing: " + prolog);
+				throw new XmlException("prolog entry can not be closing or self closing: " + prolog);
 			this.stack.clear(); // remove the "xml" element opened by the prolog entry
 			
 			this.version = element.attributes().get("version");
@@ -186,9 +185,9 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	 * Returns the XML version specified in the files prolog entry.
 	 * @return The version string specified in XML or the fallback version "1.0" if no prolog or version attribute was specified
 	 * @throws IOException If an IO exception occurred while accessing the source stream
-	 * @throws XMLException If an exception occurred while parsing the XML content
+	 * @throws XmlException If an exception occurred while parsing the XML content
 	 */
-	public String getVersion() throws IOException, XMLException {
+	public String getVersion() throws IOException, XmlException {
 		if (this.version == null || this.encoding == null)
 			readProlog();
 		return version;
@@ -198,9 +197,9 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	 * Returns the character encoding specified in the files prolog entry.
 	 * @return The character encoding name specified in XML or the fallback encoding "UTF-8" if no prolog or encoding attribute was specified
 	 * @throws IOException If an IO exception occurred while accessing the source stream
-	 * @throws XMLException If an exception occurred while parsing the XML content
+	 * @throws XmlException If an exception occurred while parsing the XML content
 	 */
-	public String getEncoding() throws IOException, XMLException {
+	public String getEncoding() throws IOException, XmlException {
 		if (this.version == null || this.encoding == null)
 			readProlog();
 		return encoding;
@@ -213,14 +212,14 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	/**
 	 * Parses the string between the angled brackets of an tag element and returns the element descriptor.
 	 */
-	private ElementDescriptor parseElementString(String elementStr) throws IOException, XMLException {
+	private ElementDescriptor parseElementString(String elementStr) throws IOException, XmlException {
 		String s = elementStr;
 		
 		// check type of tag
 		boolean closing = elementStr.startsWith("/");
 		boolean selfClosing = elementStr.endsWith("/");
 		if (closing && selfClosing)
-			throw new XMLException(this, "double slashes at element: " + s);
+			throw new XmlException(this, "double slashes at element: " + s);
 		
 		// remove opening and closing slashes
 		if (closing) elementStr = elementStr.substring(1);
@@ -229,11 +228,11 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 		// parse tag element name with namespace
 		Matcher elementName = ELEMENT_NAME.matcher(elementStr);
 		if (!elementName.find())
-			throw new XMLException(this, "invalid element name: " + s);
+			throw new XmlException(this, "invalid element name: " + s);
 		
 		// test for excess characters before brackets on closing elements
 		if (closing && elementName.end() != elementStr.length())
-			throw new XMLException(this, "closing element name slash has to follow immediately: " + s);
+			throw new XmlException(this, "closing element name slash has to follow immediately: " + s);
 		
 		Map<String, URI> namespaces = this.namespaces;
 		
@@ -267,7 +266,7 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 						namespaces.put(xmlns.group(1) == null ? "" : xmlns.group(1), new URI(valueStr));
 						continue;
 					} catch (URISyntaxException e) {
-						throw new XMLException(this, "malformed XML namespace URI", e);
+						throw new XmlException(this, "malformed XML namespace URI", e);
 					}
 				}
 				
@@ -276,10 +275,10 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 			
 			String excess = attributeStr.substring(last);
 			if (!excess.isBlank())
-				throw new XMLException(this, "excess characters after attributes: " + s);
+				throw new XmlException(this, "excess characters after attributes: " + s);
 		} else {
 			if (elementName.end() != elementStr.length())
-				throw new XMLException(this, "excess characters after element name: " + s);
+				throw new XmlException(this, "excess characters after element name: " + s);
 		}
 		
 		// construct element descriptor
@@ -295,9 +294,9 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	 * If there is text data that has to be read before the next element, or there are no more elements, this method will return null.
 	 * @return An element descriptor describing the next tag element or null if there are no more elements or text data has to be read first
 	 * @throws IOException If an IO exception occurred while accessing the source stream
-	 * @throws XMLException If an exception occurred while parsing the XML content
+	 * @throws XmlException If an exception occurred while parsing the XML content
 	 */
-	public ElementDescriptor readNext() throws IOException, XMLException {
+	public ElementDescriptor readNext() throws IOException, XmlException {
 		// do not allow to continue parsing within an CDATA block
 		if (cdataParsing) return null;
 		
@@ -497,12 +496,12 @@ public class XMLInputStream implements XMLStream, AutoCloseable {
 	 * Reading from both streams before the split stream reached EOF or is discarded of results in undefined behavior.<br>
 	 * @return The split stream, or null if this stream already reached EOF
 	 */
-	public XMLInputStream splitStream() {
-		return new XMLInputStream(this);
+	public XmlReader splitStream() {
+		return new XmlReader(this);
 	}
 	
 	/**
-	 * Indicates that this stream was split from an parent stream by the {@link XMLInputStream#splitStream()} method.
+	 * Indicates that this stream was split from an parent stream by the {@link XmlReader#splitStream()} method.
 	 * @return true if this is a split stream
 	 */
 	public boolean isSplit() {

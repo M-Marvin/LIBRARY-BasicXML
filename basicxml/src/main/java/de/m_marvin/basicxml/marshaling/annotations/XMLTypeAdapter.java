@@ -5,16 +5,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import de.m_marvin.basicxml.marshaling.adapter.XMLClassFieldAdapter;
+import de.m_marvin.basicxml.marshaling.adapter.XmlClassFieldAdapter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.TYPE})
 /**
  * Defines an type adapter to convert the string XML data into the desired class
  */
-public @interface XMLTypeAdapter {
+public @interface XmlTypeAdapter {
 	
-	public Class<? extends XMLClassFieldAdapter<?, ?>> value();
+	public Class<? extends XmlClassFieldAdapter<?, ?>> value();
 
 	/**
 	 * The parent class type of the data type of this type adapter.

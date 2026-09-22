@@ -13,16 +13,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import de.m_marvin.basicxml.marshaling.annotations.XMLField;
-import de.m_marvin.basicxml.marshaling.annotations.XMLOrder;
-import de.m_marvin.basicxml.marshaling.annotations.XMLType;
+import de.m_marvin.basicxml.marshaling.annotations.XmlField;
+import de.m_marvin.basicxml.marshaling.annotations.XmlOrder;
+import de.m_marvin.basicxml.marshaling.annotations.XmlType;
 
 /**
  * Describes information about an class type required for XML marshaling
  * @param <T> The type of the class
  * @param <P> The type of the parent class of this class, used when construction non-static classes
  */
-public record XMLClassType<T, P>(
+public record XmlClassType<T, P>(
 		/** true if this class is static and can be constructed without an parent instance **/
 		boolean isStatic,
 		/** the required type of the parent instacen if this class is non-static **/
@@ -32,9 +32,9 @@ public record XMLClassType<T, P>(
 		/** the classes which are defined by this class and also take part in XML marshaling **/
 		Set<Class<?>> subTypes,
 		/** the attribute fields defined in this class **/
-		Map<String, XMLClassField<?, ?>> attributes,
+		Map<String, XmlClassField<?, ?>> attributes,
 		/** the element fields defined in this class **/
-		NamespaceMap<XMLClassField<?, ?>> elements,
+		NamespaceMap<XmlClassField<?, ?>> elements,
 		/** order in which attributes are written to XML **/
 		List<String> attributeOrder,
 		/** order in which elements are written to XML **/
@@ -46,10 +46,10 @@ public record XMLClassType<T, P>(
 		public T makeType(P parentObject) throws LayerInstantiationException;
 	}
 	
-	public static <T, P> XMLClassType<T, P> makeFromClass(Class<T> type, Class<P> parentType, boolean ignoreNamespaces) {
+	public static <T, P> XmlClassType<T, P> makeFromClass(Class<T> type, Class<P> parentType, boolean ignoreNamespaces) {
 		Objects.requireNonNull(type, "type can not be null");
 		
-		if (!type.isAnnotationPresent(XMLType.class))
+		if (!type.isAnnotationPresent(XmlType.class))
 			throw new IllegalArgumentException("the supplied class is not annotated as an XML type object: " + type);
 		
 		boolean isStatic = type.getEnclosingClass() == null || Modifier.isStatic(type.getModifiers());
@@ -75,11 +75,11 @@ public record XMLClassType<T, P>(
 				}
 			};
 			
-			XMLOrder xmlOrderAnnotation = type.getAnnotation(XMLOrder.class);
+			XmlOrder xmlOrderAnnotation = type.getAnnotation(XmlOrder.class);
 			List<String> attributeOrder = xmlOrderAnnotation == null ? Collections.emptyList() : Arrays.asList(xmlOrderAnnotation.attributes());
 			List<String> elementOrder = xmlOrderAnnotation == null ? Collections.emptyList() : Arrays.asList(xmlOrderAnnotation.elements());
 			
-			XMLClassType<T, P> xmlClassType = new XMLClassType<T, P>(isStatic, parentType, factory, new HashSet<>(), new LinkedHashMap<>(), new NamespaceMap<>(ignoreNamespaces), attributeOrder, elementOrder);
+			XmlClassType<T, P> xmlClassType = new XmlClassType<T, P>(isStatic, parentType, factory, new HashSet<>(), new LinkedHashMap<>(), new NamespaceMap<>(ignoreNamespaces), attributeOrder, elementOrder);
 			findFieldsAndTypes(type, xmlClassType);
 			return xmlClassType;
 			
@@ -91,22 +91,22 @@ public record XMLClassType<T, P>(
 	public static final String TEXT_VALUE_FIELD = "!TEXT!";
 	public static final String REMAINING_MAP_FIELD = "!REMAINING!";
 	
-	private static void findFieldsAndTypes(Class<?> clazz, XMLClassType<?, ?> xmlClassType) {
+	private static void findFieldsAndTypes(Class<?> clazz, XmlClassType<?, ?> xmlClassType) {
 		Class<?> superclass = clazz.getSuperclass();
-		if (superclass.isAnnotationPresent(XMLType.class))
+		if (superclass.isAnnotationPresent(XmlType.class))
 			findFieldsAndTypes(superclass, xmlClassType);
 		
 		for (Class<?> in : clazz.getInterfaces())
-			if (in.isAnnotationPresent(XMLType.class))
+			if (in.isAnnotationPresent(XmlType.class))
 				findFieldsAndTypes(in, xmlClassType);
 		
 		for (Field field : clazz.getDeclaredFields()) {
-			XMLField xmlField = field.getAnnotation(XMLField.class);
+			XmlField xmlField = field.getAnnotation(XmlField.class);
 			if (xmlField == null) continue;
-			String name = xmlField.name().equals(XMLField.NULL_STR) ? field.getName() : xmlField.name();
-			String namespace = xmlField.namespace().equals(XMLField.NULL_STR) ? null : xmlField.namespace();
+			String name = xmlField.name().equals(XmlField.NULL_STR) ? field.getName() : xmlField.name();
+			String namespace = xmlField.namespace().equals(XmlField.NULL_STR) ? null : xmlField.namespace();
 			
-			XMLClassField<?, ?> xmlClassField = XMLClassField.makeFromField(field.getType(), field);
+			XmlClassField<?, ?> xmlClassField = XmlClassField.makeFromField(field.getType(), field);
 			
 			switch (xmlField.value()) {
 			case ATTRIBUTE: 
@@ -129,7 +129,7 @@ public record XMLClassType<T, P>(
 		}
 		
 		for (Class<?> type : clazz.getDeclaredClasses()) {
-			if (type.isAnnotationPresent(XMLType.class))
+			if (type.isAnnotationPresent(XmlType.class))
 				xmlClassType.subTypes.add(type);
 		}
 	}

@@ -10,4 +10,4 @@ import java.lang.annotation.Target;
 /**
  * Marks an XMLField of type {@link FieldType#TEXT}, {@link FieldType#ELEMENT}, {@link FieldType#ELEMENT_COLLECTION} or {@link FieldType#REMAINING_ELEMENT_MAP} to use an CDATA block when writing its text data.
  */
-public @interface XMLCDATA {}
+public @interface XmlCData {}

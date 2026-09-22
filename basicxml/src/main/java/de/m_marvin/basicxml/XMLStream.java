@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Interface implemented by XMLInputStream and XMLOutputStream, only defines a method used for printing log entries
+ * Interface implemented by XMLInputStream and XMLOutputStream, defines some common methods and types
  */
-public interface XMLStream {
+public interface XmlStream {
 
 	/**
 	 * Describes if the element was opened, closed or is self closing
@@ -30,6 +30,12 @@ public interface XMLStream {
 		@Override
 		public final String toString() {
 			return "namespace: " + this.namespace + " element: " + this.name;
+		}
+		
+		public ElementDescriptor getClosingTag() {
+			if (type != DescType.OPEN)
+				throw new UnsupportedOperationException();
+			return new ElementDescriptor(DescType.CLOSE, namespace, name, null);
 		}
 		
 	}

@@ -1,2 +1,4 @@
 .metadata
 /basicxml/bin
+/basicxml/test
+*.log

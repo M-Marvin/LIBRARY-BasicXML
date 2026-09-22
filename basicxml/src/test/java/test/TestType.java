@@ -3,51 +3,51 @@ package test;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import de.m_marvin.basicxml.marshaling.adapter.XMLClassFieldAdapter;
-import de.m_marvin.basicxml.marshaling.annotations.XMLField;
-import de.m_marvin.basicxml.marshaling.annotations.XMLField.FieldType;
-import de.m_marvin.basicxml.marshaling.annotations.XMLRootType;
-import de.m_marvin.basicxml.marshaling.annotations.XMLType;
-import de.m_marvin.basicxml.marshaling.annotations.XMLTypeAdapter;
+import de.m_marvin.basicxml.marshaling.adapter.XmlClassFieldAdapter;
+import de.m_marvin.basicxml.marshaling.annotations.XmlField;
+import de.m_marvin.basicxml.marshaling.annotations.XmlField.FieldType;
+import de.m_marvin.basicxml.marshaling.annotations.XmlRootType;
+import de.m_marvin.basicxml.marshaling.annotations.XmlType;
+import de.m_marvin.basicxml.marshaling.annotations.XmlTypeAdapter;
 
-@XMLType
-@XMLRootType(value = "testtype", namespace = "")
+@XmlType
+@XmlRootType(value = "testtype", namespace = "")
 public class TestType {
 	
 	public static final String NS = "";
 	
-	@XMLField(value = FieldType.ATTRIBUTE, namespace = NS)
+	@XmlField(value = FieldType.ATTRIBUTE, namespace = NS)
 	public boolean test;
 	
-	@XMLField(value = FieldType.ELEMENT, namespace = NS)
+	@XmlField(value = FieldType.ELEMENT, namespace = NS)
 	public TestSubType testsubtype;
 	
-	@XMLType
+	@XmlType
 	public class TestSubType {
 
-		@XMLField(value = FieldType.ATTRIBUTE, namespace = NS)
+		@XmlField(value = FieldType.ATTRIBUTE, namespace = NS)
 		public String attribute1;
 
-		@XMLField(value = FieldType.ATTRIBUTE, namespace = NS)
+		@XmlField(value = FieldType.ATTRIBUTE, namespace = NS)
 		public String attribute2;
 		
 	}
 
-	@XMLType
-	public class TestList { @XMLField(value = FieldType.ELEMENT_COLLECTION, type = TestItem.class, namespace = NS) public ArrayList<TestItem> testitem; }
-	@XMLField(value = FieldType.ELEMENT, namespace = NS)
+	@XmlType
+	public class TestList { @XmlField(value = FieldType.ELEMENT_COLLECTION, type = TestItem.class, namespace = NS) public ArrayList<TestItem> testitem; }
+	@XmlField(value = FieldType.ELEMENT, namespace = NS)
 	public TestList testlist;
 	
-	@XMLType
+	@XmlType
 	public class TestItem extends TestSubType {
 
-		@XMLField(value = FieldType.TEXT, namespace = NS)
+		@XmlField(value = FieldType.TEXT, namespace = NS)
 		public String value;
 		
 	}
 	
-	@XMLTypeAdapter(TestDataClass.class)
-	public static class TestDataClass implements XMLClassFieldAdapter<TestDataClass, Void> {
+	@XmlTypeAdapter(TestDataClass.class)
+	public static class TestDataClass implements XmlClassFieldAdapter<TestDataClass, Void> {
 		
 		public String text;
 
@@ -65,10 +65,10 @@ public class TestType {
 		
 	}
 	
-	@XMLField(value = FieldType.REMAINING_ELEMENT_MAP, type = TestDataClass.class, namespace = NS)
+	@XmlField(value = FieldType.REMAINING_ELEMENT_MAP, type = TestDataClass.class, namespace = NS)
 	public HashMap<String, TestDataClass> remaining;
 	
-	@XMLField(value = FieldType.ELEMENT, namespace = NS)
+	@XmlField(value = FieldType.ELEMENT, namespace = NS)
 	public TestEnum zzz;
 	
 	public static enum TestEnum {

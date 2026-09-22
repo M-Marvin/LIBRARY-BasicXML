@@ -7,10 +7,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 
-import de.m_marvin.basicxml.XMLInputStream;
-import de.m_marvin.basicxml.XMLOutputStream;
-import de.m_marvin.basicxml.marshaling.XMLMarshaler;
-import de.m_marvin.basicxml.marshaling.XMLUnmarshaler;
+import de.m_marvin.basicxml.XmlReader;
+import de.m_marvin.basicxml.XmlWriter;
+import de.m_marvin.basicxml.dom.XmlDOM;
+import de.m_marvin.basicxml.dom.XmlList;
+import de.m_marvin.basicxml.dom.XmlNamed;
+import de.m_marvin.basicxml.dom.XmlPrimitive;
+import de.m_marvin.basicxml.marshaling.XmlMarshaler;
+import de.m_marvin.basicxml.marshaling.XmlUnmarshaler;
 
 public class Test {
 	
@@ -20,11 +24,11 @@ public class Test {
 		
 		OutputStream output = new FileOutputStream(new File(dir, "/test/test2.xml"));
 		
-		XMLOutputStream xmlOut = new XMLOutputStream(output);
+		XmlWriter xmlOut = new XmlWriter(output);
 		
 		InputStream input = new FileInputStream(new File(dir, "/test/test.xml"));
 		
-		XMLInputStream xmlIn = new XMLInputStream(input);
+		XmlReader xmlIn = new XmlReader(input);
 		
 //		String text;
 //		ElementDescriptor element;
@@ -39,7 +43,7 @@ public class Test {
 //		xmlIn.close();
 //		xmlOut.close();
 		
-		XMLUnmarshaler unmarshaller = new XMLUnmarshaler(true, TestType.class);
+		XmlUnmarshaler unmarshaller = new XmlUnmarshaler(true, TestType.class);
 		
 		var object = unmarshaller.unmarshall(xmlIn, TestType.class);
 		
@@ -51,7 +55,7 @@ public class Test {
 		
 		System.out.println(object.zzz);
 		
-		XMLMarshaler marshaler = new XMLMarshaler(false, TestType.class);
+		XmlMarshaler marshaler = new XmlMarshaler(false, TestType.class);
 		
 		marshaler.marshal(xmlOut, object);
 		
@@ -70,6 +74,24 @@ public class Test {
 //		}
 //		
 //		xmlIn.close();
+		
+		XmlDOM parser = new XmlDOM();
+
+		input = new FileInputStream(new File(dir, "/test/test.xml"));
+		
+		xmlIn = new XmlReader(input);
+		
+		XmlNamed tag = parser.read(xmlIn);
+		
+		tag.getValue().getAsTag().addEntry("test", XmlList.of(new XmlPrimitive("Test1"), new XmlPrimitive("Test2")));
+		
+		output = new FileOutputStream(new File(dir, "/test/test3.xml"));
+		
+		xmlOut = new XmlWriter(output);
+		
+		parser.write(xmlOut, tag);
+		
+		System.out.println(tag);
 		
 	}
 	

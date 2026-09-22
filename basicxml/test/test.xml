@@ -5,7 +5,9 @@
 		<testitem>Test Text</testitem>
 		<testitem>Test Text</testitem>
 	</testlist>
-	<key1></key1>
+	<key1>
+	</key1>
+XXX
 	<key2>
 Test2
 Test2

@@ -1,31 +1,31 @@
 package de.m_marvin.basicxml.marshaling;
 
-import de.m_marvin.basicxml.XMLStream;
+import de.m_marvin.basicxml.XmlStream;
 
 /**
  * Indicates an error while parsing or writing XML data by an (un)marshaler
  */
-public class XMLMarshalingException extends Exception {
+public class XmlMarshalingException extends Exception {
 	
 	private static final long serialVersionUID = -7153809693116902097L;
 	
-	public XMLMarshalingException() {
+	public XmlMarshalingException() {
 		super();
 	}
 
-	public XMLMarshalingException(String msg) {
+	public XmlMarshalingException(String msg) {
 		super(msg);
 	}
 
-	public XMLMarshalingException(String msg, Exception e) {
+	public XmlMarshalingException(String msg, Exception e) {
 		super(msg, e);
 	}
 
-	public XMLMarshalingException(XMLStream stream,String msg) {
+	public XmlMarshalingException(XmlStream stream,String msg) {
 		super(stream.xmlStackPath() + " : " + msg);
 	}
 
-	public XMLMarshalingException(XMLStream stream,String msg, Exception e) {
+	public XmlMarshalingException(XmlStream stream,String msg, Exception e) {
 		super(stream.xmlStackPath() + " : " + msg, e);
 	}
 	

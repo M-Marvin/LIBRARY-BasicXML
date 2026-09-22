@@ -10,9 +10,9 @@ import java.lang.annotation.Target;
 /**
  * Marks an type of being able to be serialized using an marshaler, and sets the root element namespace and name.
  */
-public @interface XMLRootType {
+public @interface XmlRootType {
 	
 	public String value();
-	public String namespace() default XMLField.NULL_STR;
+	public String namespace() default XmlField.NULL_STR;
 	
 }

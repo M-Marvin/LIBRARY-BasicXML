@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 /**
  * Determines the order in which elements and attributes of this XML type class are written to an XML file.
  */
-public @interface XMLOrder {
+public @interface XmlOrder {
 	
 	public String[] attributes() default {};
 	public String[] elements() default {};

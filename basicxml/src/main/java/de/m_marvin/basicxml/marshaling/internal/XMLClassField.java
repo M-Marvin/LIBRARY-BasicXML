@@ -9,19 +9,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import de.m_marvin.basicxml.marshaling.XMLMarshalingException;
-import de.m_marvin.basicxml.marshaling.adapter.XMLClassFieldAdapter;
-import de.m_marvin.basicxml.marshaling.annotations.XMLEnum;
-import de.m_marvin.basicxml.marshaling.annotations.XMLField;
-import de.m_marvin.basicxml.marshaling.annotations.XMLType;
-import de.m_marvin.basicxml.marshaling.annotations.XMLTypeAdapter;
+import de.m_marvin.basicxml.marshaling.XmlMarshalingException;
+import de.m_marvin.basicxml.marshaling.adapter.XmlClassFieldAdapter;
+import de.m_marvin.basicxml.marshaling.annotations.XmlEnum;
+import de.m_marvin.basicxml.marshaling.annotations.XmlField;
+import de.m_marvin.basicxml.marshaling.annotations.XmlType;
+import de.m_marvin.basicxml.marshaling.annotations.XmlTypeAdapter;
 
 /**
  * Describes information about an class field required for XML marshaling
  * @param <V> The value type of the field
  * @param <P> The type of the parent class in which the fields data type class is defined, used when construction non-static classes
  */
-public record XMLClassField<V, P>(
+public record XmlClassField<V, P>(
 		/** true if this fields data type is an XML primitive (java primitives + string and enums) **/
 		boolean isPrimitive,
 		/** type of this fields data container, can be a single value, a list or an map **/
@@ -33,7 +33,7 @@ public record XMLClassField<V, P>(
 		/** parent type for non static classes **/
 		Class<P> parentType,
 		/** optional type adapter used for converting to the fields data type **/
-		XMLClassFieldAdapter<V, P> adapter
+		XmlClassFieldAdapter<V, P> adapter
 		) {
 	
 	public static enum FieldType {
@@ -43,16 +43,16 @@ public record XMLClassField<V, P>(
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <V, P> XMLClassField<V, P> makeFromField(Class<V> type, Field field) {
+	public static <V, P> XmlClassField<V, P> makeFromField(Class<V> type, Field field) {
 		Objects.requireNonNull(field, "field can not be null");
 		
 		field.trySetAccessible();
 		
-		if (!field.isAnnotationPresent(XMLField.class))
+		if (!field.isAnnotationPresent(XmlField.class))
 			throw new IllegalArgumentException("the supplied field is not annotated as an XML type object: " + field);
 		
-		XMLField xmlFieldAnnotation = field.getAnnotation(XMLField.class);
-		XMLTypeAdapter xmlTypeAdapterAnnotation = field.getAnnotation(XMLTypeAdapter.class);
+		XmlField xmlFieldAnnotation = field.getAnnotation(XmlField.class);
+		XmlTypeAdapter xmlTypeAdapterAnnotation = field.getAnnotation(XmlTypeAdapter.class);
 		
 		FieldType fieldType = null;
 		Class<V> dataType = null;
@@ -84,10 +84,10 @@ public record XMLClassField<V, P>(
 		
 		boolean isPrimitive = dataType.isPrimitive() || dataType == String.class || dataType.isEnum();
 		
-		XMLClassFieldAdapter<V, P> adapter = null;
+		XmlClassFieldAdapter<V, P> adapter = null;
 		Class<P> parentType = (Class<P>) type.getEnclosingClass();
 		if (xmlTypeAdapterAnnotation != null) {
-			Class<? extends XMLClassFieldAdapter<?, ?>> adapterClass = xmlTypeAdapterAnnotation.value();
+			Class<? extends XmlClassFieldAdapter<?, ?>> adapterClass = xmlTypeAdapterAnnotation.value();
 			if (parentType == null || Modifier.isStatic(parentType.getModifiers()))
 				parentType = (Class<P>) xmlTypeAdapterAnnotation.parent();
 			if (parentType == Void.class)
@@ -95,8 +95,8 @@ public record XMLClassField<V, P>(
 			try {
 				if (adapterClass.getEnclosingClass() != null && !Modifier.isStatic(adapterClass.getModifiers()))
 					throw new IllegalArgumentException("the supplied type adapter class must be static: " + adapterClass);
-				Constructor<? extends XMLClassFieldAdapter<?, ?>> constructor = adapterClass.getConstructor();
-				adapter = (XMLClassFieldAdapter<V, P>) constructor.newInstance();
+				Constructor<? extends XmlClassFieldAdapter<?, ?>> constructor = adapterClass.getConstructor();
+				adapter = (XmlClassFieldAdapter<V, P>) constructor.newInstance();
 			} catch (NoSuchMethodException e) {
 				throw new IllegalArgumentException("the supplied field's type adapter has no default constructor: " + field);
 			} catch (InstantiationException | InvocationTargetException | IllegalArgumentException | IllegalAccessException e) {
@@ -105,14 +105,14 @@ public record XMLClassField<V, P>(
 		}
 		
 		if (adapter == null) {
-			XMLTypeAdapter fallbackAdapterAnnotation = dataType.getAnnotation(XMLTypeAdapter.class);
+			XmlTypeAdapter fallbackAdapterAnnotation = dataType.getAnnotation(XmlTypeAdapter.class);
 			if (fallbackAdapterAnnotation != null) {
-				Class<? extends XMLClassFieldAdapter<?, ?>> adapterClass = fallbackAdapterAnnotation.value();
+				Class<? extends XmlClassFieldAdapter<?, ?>> adapterClass = fallbackAdapterAnnotation.value();
 				try {
 					if (adapterClass.getEnclosingClass() != null && !Modifier.isStatic(adapterClass.getModifiers()))
 						throw new IllegalArgumentException("the supplied type adapter class must be static: " + adapterClass);
-					Constructor<? extends XMLClassFieldAdapter<?, ?>> constructor = adapterClass.getConstructor();
-					adapter = (XMLClassFieldAdapter<V, P>) constructor.newInstance();
+					Constructor<? extends XmlClassFieldAdapter<?, ?>> constructor = adapterClass.getConstructor();
+					adapter = (XmlClassFieldAdapter<V, P>) constructor.newInstance();
 				} catch (NoSuchMethodException e) {
 					throw new IllegalArgumentException("the supplied field's fallback type adapter has no default constructor: " + field);
 				}  catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | SecurityException e) {
@@ -121,14 +121,14 @@ public record XMLClassField<V, P>(
 			}
 		}
 		
-		if (!dataType.isAnnotationPresent(XMLType.class) && adapter == null && !isPrimitive)
+		if (!dataType.isAnnotationPresent(XmlType.class) && adapter == null && !isPrimitive)
 			throw new IllegalArgumentException("field type requires type adapter: " + field);
 		
-		return new XMLClassField<V, P>(isPrimitive, fieldType, field, dataType, parentType, adapter);
+		return new XmlClassField<V, P>(isPrimitive, fieldType, field, dataType, parentType, adapter);
 		
 	}
 	
-	public void assign(Object xmlClassObject, V value, String key) throws XMLMarshalingException {
+	public void assign(Object xmlClassObject, V value, String key) throws XmlMarshalingException {
 		try {
 			switch (this.fieldType) {
 			case SINGLE_VALUE:
@@ -143,9 +143,9 @@ public record XMLClassField<V, P>(
 						Constructor<Collection<V>> collectionConstructor = (Constructor<Collection<V>>) this.field.getType().getConstructor();
 						collection = collectionConstructor.newInstance();
 					} catch (NoSuchMethodException e) {
-						throw new XMLMarshalingException("the collection class does not have an default constructor, and no instance is provided: " + this.field, e);
+						throw new XmlMarshalingException("the collection class does not have an default constructor, and no instance is provided: " + this.field, e);
 					} catch (InstantiationException | SecurityException | InvocationTargetException e) {
-						throw new XMLMarshalingException("the collection class could not be constructed: " + this.field, e);
+						throw new XmlMarshalingException("the collection class could not be constructed: " + this.field, e);
 					}
 					this.field.set(xmlClassObject, collection);
 				}
@@ -160,9 +160,9 @@ public record XMLClassField<V, P>(
 						Constructor<Map<String, V>> mapConstructor = (Constructor<Map<String, V>>) this.field.getType().getConstructor();
 						map = mapConstructor.newInstance();
 					} catch (NoSuchMethodException e) {
-						throw new XMLMarshalingException("the map class does not have an default constructor, and now instance if provided: " + this.field, e);
+						throw new XmlMarshalingException("the map class does not have an default constructor, and now instance if provided: " + this.field, e);
 					} catch (InstantiationException | SecurityException | InvocationTargetException e) {
-						throw new XMLMarshalingException("the map class could not be constructed: " + this.field, e);
+						throw new XmlMarshalingException("the map class could not be constructed: " + this.field, e);
 					}
 					this.field.set(xmlClassObject, map);
 				}
@@ -235,7 +235,7 @@ public record XMLClassField<V, P>(
 			for (T e : primitive.getEnumConstants()) {
 				try {
 					Field enumField = e.getClass().getDeclaredField(((Enum) e).name());
-					XMLEnum enumAnnotation = enumField.getAnnotation(XMLEnum.class);
+					XmlEnum enumAnnotation = enumField.getAnnotation(XmlEnum.class);
 					if (enumAnnotation == null) {
 						if (((Enum) e).name().equalsIgnoreCase(valueStr)) return e;
 					} else if (enumAnnotation.value().equals(valueStr)) return e;
@@ -268,7 +268,7 @@ public record XMLClassField<V, P>(
 			if (value == null) return null;
 			try {
 				Field enumField = value.getClass().getDeclaredField(((Enum) value).name());
-				XMLEnum enumAnnotation = enumField.getAnnotation(XMLEnum.class) ;
+				XmlEnum enumAnnotation = enumField.getAnnotation(XmlEnum.class) ;
 				if (enumAnnotation == null) return ((Enum) value).name();
 				return enumAnnotation.value();
 			} catch (NoSuchFieldError | NoSuchFieldException | SecurityException e) {
