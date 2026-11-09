@@ -31,18 +31,26 @@ public class XmlUnmarshaler {
 			resolveTypeObjects(subTypes, type, ignoreNamespace);
 		}
 	}
-	
-	public <T> T unmarshall(XmlReader xmlStream, Class<T> objectType, URI fallbackNamespace) throws IOException, XmlException, XmlMarshalingException {
-		return unmarshall(xmlStream, objectType, fallbackNamespace, true);
+
+	public <T> T unmarshall(XmlReader xmlStream, T objectInstance, Class<? super T> objectType) throws IOException, XmlException, XmlMarshalingException {
+		return unmarshall(xmlStream, objectInstance, objectType, true);
 	}
-		
-	public <T> T unmarshall(XmlReader xmlStream, Class<T> objectType, URI fallbackNamespace, boolean closeStream) throws IOException, XmlException, XmlMarshalingException {
+
+	public <T> T unmarshall(XmlReader xmlStream, T objectInstance, Class<? super T> objectType, boolean closeStream) throws IOException, XmlException, XmlMarshalingException {
+		return unmarshall(xmlStream, objectInstance, objectType, null, true);
+	}
+
+	public <T> T unmarshall(XmlReader xmlStream, T objectInstance, Class<? super T> objectType, URI fallbackNamespace) throws IOException, XmlException, XmlMarshalingException {
+		return unmarshall(xmlStream, objectInstance, objectType, fallbackNamespace, true);
+	}
+
+	public <T> T unmarshall(XmlReader xmlStream, T objectInstance, Class<? super T> objectType, URI fallbackNamespace, boolean closeStream) throws IOException, XmlException, XmlMarshalingException {
 		
 		if (fallbackNamespace != null)
 			xmlStream.getNamespaces().put("", fallbackNamespace);
 		ElementDescriptor element = xmlStream.readNext();
 		if (element == null) return null;
-		T xmlObject = makeObjectFromXML(xmlStream, element, objectType, new Stack<Object>());
+		T xmlObject = makeObjectFromXML(xmlStream, new Stack<Object>(), element, objectInstance, objectType);
 		
 		if (closeStream)
 			xmlStream.close();
@@ -55,10 +63,18 @@ public class XmlUnmarshaler {
 		return unmarshall(xmlStream, objectType, true);
 	}
 	
-	public <T> T unmarshall(XmlReader xmlStream, Class<T> objectType, boolean closeStream) throws IOException, XmlException, XmlMarshalingException {
-		return unmarshall(xmlStream, objectType, null, closeStream);
+	public <T> T unmarshall(XmlReader xmlStream, Class<T> objectType, URI fallbackNamespace) throws IOException, XmlException, XmlMarshalingException {
+		return unmarshall(xmlStream, objectType, fallbackNamespace, true);
 	}
-	
+
+	public <T> T unmarshall(XmlReader xmlStream, Class<T> objectType, boolean closeStream) throws IOException, XmlException, XmlMarshalingException {
+		return unmarshall(xmlStream, objectType, (URI) null, closeStream);
+	}
+
+	public <T> T unmarshall(XmlReader xmlStream, Class<? super T> objectType, URI fallbackNamespace, boolean closeStream) throws IOException, XmlException, XmlMarshalingException {
+		return unmarshall(xmlStream, null, objectType, fallbackNamespace, closeStream);
+	}
+
 	private <T, P> void fillAttributeFromXML(Object xmlClassObject, XmlClassField<T, P> attributeField, String attributeName, XmlReader xmlStream, String valueStr, Stack<Object> objectStack) throws XmlMarshalingException {
 
 		objectStack.push(xmlClassObject);
@@ -93,14 +109,14 @@ public class XmlUnmarshaler {
 	private <T, P> void fillElementFromXML(Object xmlClassObject, XmlClassField<T, P> elementField, String elementName, XmlReader xmlStream, ElementDescriptor openingElement, Stack<Object> objectStack) throws IOException, XmlException, XmlMarshalingException {
 		
 		objectStack.push(xmlClassObject);
-		T value = makeObjectFromXML(xmlStream, openingElement, elementField.type(), objectStack);
+		T value = makeObjectFromXML(xmlStream, objectStack, openingElement, null, elementField.type());
 		objectStack.pop();
 		
 		elementField.assign(xmlClassObject, value, elementName);
 		
 	}
 	
-	private <T, P> T makeObjectFromXML(XmlReader xmlStream, ElementDescriptor openingElement, Class<T> objectType, Stack<Object> objectStack) throws IOException, XmlException, XmlMarshalingException {
+	private <T, P> T makeObjectFromXML(XmlReader xmlStream, Stack<Object> objectStack, ElementDescriptor openingElement, T objectInstance, Class<? super T> objectType) throws IOException, XmlException, XmlMarshalingException {
 		assert openingElement.type() != DescType.CLOSE : "element descriptor can not be a closing element";
 	
 		@SuppressWarnings("unchecked")
@@ -112,7 +128,16 @@ public class XmlUnmarshaler {
 		P parentObject = xmlClassType.isStatic() ? null : (P) findTopMost(objectStack, xmlClassType.parentType()::isInstance);
 		if (!xmlClassType.isStatic() && parentObject == null)
 			throw new XmlMarshalingException(xmlStream, "non-static class hierarchical error, unable to identify closest parent class to construct from: " + xmlClassType.parentType());
-		T xmlClassObject = xmlClassType.factory().makeType(parentObject);
+		T xmlClassObject = objectInstance == null ? xmlClassType.factory().makeType(parentObject) : objectInstance;
+		
+		loadObjectFromXML(xmlStream, objectStack, openingElement, xmlClassObject, xmlClassType);
+		
+		return xmlClassObject;
+		
+	}
+	
+	private <T, P> void loadObjectFromXML(XmlReader xmlStream, Stack<Object> objectStack, ElementDescriptor openingElement, T xmlClassObject, XmlClassType<T, P> xmlClassType) throws IOException, XmlException, XmlMarshalingException {
+		assert openingElement.type() != DescType.CLOSE : "element descriptor can not be a closing element";
 		
 		for (String attributeName : openingElement.attributes().keySet()) {
 			XmlClassField<?, ?> attributeField = xmlClassType.attributes().get(attributeName);
@@ -189,12 +214,10 @@ public class XmlUnmarshaler {
 			}
 		}
 		
-		return xmlClassObject;
-		
 	}
 	
 	public static <T> T findTopMost(Stack<T> stack, Predicate<T> predicate) {
-		return stack.stream().filter(predicate).reduce((a, b) -> b).orElseGet(null);
+		return stack.stream().filter(predicate).reduce((a, b) -> b).orElse(null);
 	}
 	
 }

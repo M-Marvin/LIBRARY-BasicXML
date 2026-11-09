@@ -39,16 +39,25 @@ public class XmlMarshaler {
 		}
 	}
 
-	public <T> void marshal(XmlWriter xmlStream, T object) throws XmlMarshalingException, IOException, XmlException {
-		marshal(xmlStream, object, true);
+	public <T> void marshal(XmlWriter xmlStream, T objectInstance) throws XmlMarshalingException, IOException, XmlException {
+		marshal(xmlStream, objectInstance, true);
 	}
 	
-	public <T> void marshal(XmlWriter xmlStream, T object, boolean closeStrean) throws XmlMarshalingException, IOException, XmlException {
+	public <T> void marshal(XmlWriter xmlStream, T objectInstance, Class<? super T> objectType) throws XmlMarshalingException, IOException, XmlException {
+		marshal(xmlStream, objectInstance, objectType, true);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> void marshal(XmlWriter xmlStream, T objectInstance, boolean closeStrean) throws XmlMarshalingException, IOException, XmlException {
+		marshal(xmlStream, objectInstance, (Class<T>) objectInstance.getClass(), closeStrean);
+	}
+	
+	public <T> void marshal(XmlWriter xmlStream, T objectInstance, Class<? super T> objectType, boolean closeStrean) throws XmlMarshalingException, IOException, XmlException {
 		
-		if (!object.getClass().isAnnotationPresent(XmlType.class))
+		if (!objectType.isAnnotationPresent(XmlType.class))
 			throw new XmlMarshalingException("class is not annotated as XML type");
 		
-		XmlRootType xmlRootAnnotation = object.getClass().getAnnotation(XmlRootType.class);
+		XmlRootType xmlRootAnnotation = objectType.getAnnotation(XmlRootType.class);
 		if (xmlRootAnnotation == null)
 			throw new XmlMarshalingException("class is not annotated as XML root type");
 		
@@ -60,7 +69,7 @@ public class XmlMarshaler {
 				throw new IllegalArgumentException("supplied namspace is not a vald URI: " + xmlRootAnnotation.namespace(), e);
 			}
 		
-		writeElementObject(xmlStream, namespace, xmlRootAnnotation.value(), object);
+		writeElementObject(xmlStream, namespace, xmlRootAnnotation.value(), objectInstance);
 		
 		if (closeStrean)
 			xmlStream.close();

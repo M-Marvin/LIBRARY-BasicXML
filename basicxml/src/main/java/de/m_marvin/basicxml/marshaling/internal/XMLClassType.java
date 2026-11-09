@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import de.m_marvin.basicxml.marshaling.annotations.XmlField;
 import de.m_marvin.basicxml.marshaling.annotations.XmlOrder;
@@ -46,6 +47,7 @@ public record XmlClassType<T, P>(
 		public T makeType(P parentObject) throws LayerInstantiationException;
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static <T, P> XmlClassType<T, P> makeFromClass(Class<T> type, Class<P> parentType, boolean ignoreNamespaces) {
 		Objects.requireNonNull(type, "type can not be null");
 		
@@ -56,7 +58,19 @@ public record XmlClassType<T, P>(
 		if (!isStatic && parentType == null)
 			throw new IllegalArgumentException("type is not a static class but parent type is null");
 		try {
-			Constructor<T> constructor = isStatic ? type.getDeclaredConstructor() : type.getDeclaredConstructor(parentType);
+			Constructor<T> constructor;
+			if (isStatic)
+				constructor = type.getDeclaredConstructor();
+			else {
+				var parentTypeFinal = parentType;
+				parentType = Stream.of(type.getConstructors())
+					.filter(c -> c.getParameters().length == 1)
+					.map(c -> c.getParameters()[0].getType())
+					.filter(p -> p.isAssignableFrom(parentTypeFinal))
+					.findAny().orElse((Class) parentType);
+				constructor = type.getDeclaredConstructor(parentType);
+			}
+			
 			TypeFactory<T, P> factory = isStatic ? parentObject -> {
 				try {
 					return constructor.newInstance();
