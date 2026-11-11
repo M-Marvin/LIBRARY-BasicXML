@@ -3,6 +3,7 @@ package de.m_marvin.basicxml.dom;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -98,6 +99,13 @@ public class XmlTag implements XmlElement {
 			this.entries.add(new XmlNamed(name, element));
 	}
 	
+	public void removeEntries(String name) {
+		Iterator<XmlNamed> iter = this.entries.iterator();
+		while (iter.hasNext())
+			if (iter.next().getName().equals(name))
+				iter.remove();
+	}
+	
 	public XmlList getEntryList(String name) {
 		XmlElement entry = getEntry(name);
 		if (entry.isList())
@@ -123,6 +131,16 @@ public class XmlTag implements XmlElement {
 	public Stream<XmlNamed> getInnerElements() {
 		return this.entries.stream()
 				.filter(e -> e.isInnerText() || e.isInnerTag());
+	}
+	
+	public String getInnerText() {
+		return getInnerElements()
+				.filter(XmlNamed::isInnerText)
+				.map(XmlNamed::getValue)
+				.map(XmlElement::getAsPrimitive)
+				.map(XmlPrimitive::getAsString)
+				.reduce(String::concat)
+				.orElse("");
 	}
 	
 	public Stream<XmlNamed> getAttributes() {

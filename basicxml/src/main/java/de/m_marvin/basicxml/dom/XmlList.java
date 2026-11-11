@@ -1,20 +1,21 @@
 package de.m_marvin.basicxml.dom;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public record XmlList(List<XmlTag> list) implements XmlElement {
 
 	public static XmlList of(XmlElement... elements) {
-		return new XmlList(Stream.of(elements)
+		return new XmlList(new ArrayList<>(Stream.of(elements)
 			.map(element -> element.isPrimitive() ? new XmlTag(element.getAsPrimitive()) : element.getAsTag())
-			.toList());
+			.toList()));
 	}
 	
 	public static XmlList of(List<XmlElement> elements) {
-		return new XmlList(elements.stream()
+		return new XmlList(new ArrayList<>(elements.stream()
 			.map(element -> element.isPrimitive() ? new XmlTag(element.getAsPrimitive()) : element.getAsTag())
-			.toList());
+			.toList()));
 	}
 	
 	@Override
